@@ -5,18 +5,18 @@ WORKDIR /app
 
 FROM mcr.microsoft.com/dotnet/sdk:7.0 AS build
 WORKDIR /src
-COPY ["Customers.CacheManager/Background.Service.csproj", "Customers.CacheManager/"]
+COPY ["Customers.CacheManager/Customers.CacheManager.csproj", "Customers.CacheManager/"]
 COPY ["Core/Core.csproj", "Core/"]
 COPY ["CustomersService.TransportTypes/CustomersService.TransportTypes.csproj", "CustomersService.TransportTypes/"]
-RUN dotnet restore "Customers.CacheManager/Background.Service.csproj"
+RUN dotnet restore "Customers.CacheManager/Customers.CacheManager.csproj"
 COPY . .
 WORKDIR "/src/Customers.CacheManager"
-RUN dotnet build "Background.Service.csproj" -c Release -o /app/build
+RUN dotnet build "Customers.CacheManager.csproj" -c Release -o /app/build
 
 FROM build AS publish
-RUN dotnet publish "Background.Service.csproj" -c Release -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "Customers.CacheManager.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "Background.Service.dll"]
+ENTRYPOINT ["dotnet", "Customers.CacheManager.dll"]

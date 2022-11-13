@@ -3,6 +3,7 @@ using Microsoft.Extensions.Caching.Distributed;
 using Newtonsoft.Json;
 using OauthAuthorizationService.Models;
 using System;
+using OauthAuthorization.TransportTypes.TransportModels;
 
 namespace OauthAuthorizationService.Providers;
 
@@ -25,11 +26,11 @@ public class CacheProvider
             Code = code
         };
 
-        await _distributedCache.SetStringAsync(ChacheKeys.ServiceCode(issuerId, accepterId), JsonConvert.SerializeObject(authCode));
+        await _distributedCache.SetStringAsync(CacheKeys.ServiceCode(code), JsonConvert.SerializeObject(authCode));
     }
-    public async Task<AuthCodeModel?> TryGetCodeAsync(Guid issuerId, Guid accepterId)
+    public async Task<AuthCodeModel?> TryGetCodeAsync(string code)
     {
-        var authCodeJson = await _distributedCache.GetStringAsync(ChacheKeys.ServiceCode(issuerId, accepterId));
+        var authCodeJson = await _distributedCache.GetStringAsync(CacheKeys.ServiceCode(code));
         if (authCodeJson == null) return null;
 
         var authCode = JsonConvert.DeserializeObject<AuthCodeModel>(authCodeJson);
@@ -38,9 +39,9 @@ public class CacheProvider
         return authCode;
     }
 
-    public async Task RemoveCodeAsync(Guid issuerId, Guid accepterId)
+    public async Task RemoveCodeAsync(string code)
     {
-        await _distributedCache.RemoveAsync(ChacheKeys.ServiceCode(issuerId, accepterId));  
+        await _distributedCache.RemoveAsync(CacheKeys.ServiceCode(code));  
     }
     #endregion
 
@@ -55,11 +56,11 @@ public class CacheProvider
             Token = token
         };
 
-        await _distributedCache.SetStringAsync(ChacheKeys.ServiceToken(issuerId, accepterId), JsonConvert.SerializeObject(tokenModel));
+        await _distributedCache.SetStringAsync(CacheKeys.ServiceToken(issuerId, accepterId), JsonConvert.SerializeObject(tokenModel));
     }
     public async Task<TokenModel?> TryGetTokenAsync(Guid issuerId, Guid accepterId)
     {
-        var tokenJson = await _distributedCache.GetStringAsync(ChacheKeys.ServiceToken(issuerId, accepterId));
+        var tokenJson = await _distributedCache.GetStringAsync(CacheKeys.ServiceToken(issuerId, accepterId));
         if (tokenJson == null) return null;
 
         var tokenModel = JsonConvert.DeserializeObject<TokenModel>(tokenJson);
@@ -70,7 +71,7 @@ public class CacheProvider
 
     public async Task RemoveTokenAsync(Guid issuerId, Guid accepterId)
     {
-        await _distributedCache.RemoveAsync(ChacheKeys.ServiceToken(issuerId, accepterId));
+        await _distributedCache.RemoveAsync(CacheKeys.ServiceToken(issuerId, accepterId));
     }
     #endregion
 }

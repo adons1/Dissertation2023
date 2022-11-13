@@ -2,8 +2,9 @@
 using Core.Cryptography;
 using Core;
 using System.Net;
-using OauthAuthorization.TransportTypes.TransportServices.Contracts;
 using OauthAuthorization.TransportTypes.TransportModels;
+using OauthAuthorization.TransportTypes.TransportServices.Contracts;
+using System.Linq.Expressions;
 
 namespace OauthAuthorizationService.Services;
 
@@ -18,26 +19,38 @@ public class OauthService : IOauthService
     }
     public async Task<Result<AuthCodeModel>> Authorize(Guid issuerId, Guid accepterId, string password)
     {
-        var isSuccessful = await _serviceProvider.TryLogonService(issuerId, password);
-        if (isSuccessful)
+        try
         {
-            var timestamp = DateTime.UtcNow;
+            var isSuccessful = await _serviceProvider.TryLogonService(issuerId, password);
+            if (isSuccessful)
+            {
+                var timestamp = DateTime.UtcNow;
 
-            var plainText = $"{issuerId}|{accepterId}|{password}|{timestamp.Ticks}";
+                var plainText = $"{issuerId}|{accepterId}|{password}|{timestamp.Ticks}";
 
-            var code = SHA256.Hash(plainText);
+                var code = SHA256.Hash(plainText);
 
-            await _cacheProvider.SetCodeAsync(issuerId, accepterId, timestamp, code);
-            
-            return new SuccessResult<AuthCodeModel>(new() { Code = code });
+                await _cacheProvider.SetCodeAsync(issuerId, accepterId, timestamp, code);
+
+                return new SuccessResult<AuthCodeModel>(
+                    new() { 
+                        Code = code,
+                        IssuerId = issuerId,
+                        AccepterId = accepterId,
+                        IssueDate = timestamp
+                    });
+            }
+
+            return new FailureResult<AuthCodeModel>("Unauthorized.", HttpStatusCode.Unauthorized);
         }
-
-        return new FailureResult<AuthCodeModel>("Unauthorized.", HttpStatusCode.Unauthorized);
+        catch(Exception ex){
+            throw;   
+        }
     }
 
-    public async Task<Result<TokenModel>> Token(Guid issuerId, Guid accepterId, string code)
+    public async Task<Result<TokenModel>> Token(string code)
     {
-        var codeModel = await _cacheProvider.TryGetCodeAsync(issuerId, accepterId);
+        var codeModel = await _cacheProvider.TryGetCodeAsync(code);
         if (codeModel == null)
             return new FailureResult<TokenModel>("Code haven`t been found.");
 
@@ -47,10 +60,16 @@ public class OauthService : IOauthService
         var randomizer = new Randomizer();
         var token = randomizer.RandomString(100, true);
 
-        await _cacheProvider.SetTokenAsync(codeModel.IssuerId, codeModel.AccepterId, DateTime.UtcNow, code);
-        await _cacheProvider.RemoveCodeAsync(issuerId, accepterId);
+        await _cacheProvider.SetTokenAsync(codeModel.IssuerId, codeModel.AccepterId, DateTime.UtcNow, token);
+        await _cacheProvider.RemoveCodeAsync(codeModel.Code);
 
-        return new SuccessResult<TokenModel>(new() { Token = token });
+        return new SuccessResult<TokenModel>(
+            new() { 
+                Token = token, 
+                IssuerId = codeModel.IssuerId, 
+                AccepterId = codeModel.AccepterId, 
+                IssueDate = codeModel.IssueDate 
+            });
     }
 
     public async Task<Result<VerifyModel>> Verify(Guid issuerId, Guid accepterId, string token)

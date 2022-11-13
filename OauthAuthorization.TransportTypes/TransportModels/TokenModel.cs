@@ -7,11 +7,10 @@ using System.Threading.Tasks;
 
 namespace OauthAuthorization.TransportTypes.TransportModels;
 
-[JsonObject("payload")]
 public class TokenModel
 {
-    [JsonProperty("expires_in")]
-    public long ExpiresIn { get; set; }
-    [JsonProperty("token")]
+    public Guid IssuerId { get; set; }
+    public Guid AccepterId { get; set; }
+    public DateTime IssueDate { get; set; }
     public string Token { get; set; }
 }

@@ -7,6 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Folder Include="Attributes\" />
     <Folder Include="Migrations\" />
   </ItemGroup>
 
@@ -17,11 +18,12 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="6.0.10" />
+    <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="7.0.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\CustomersService.TransportTypes\CustomersService.TransportTypes.csproj" />
+    <ProjectReference Include="..\CustomersService.TransportTypes\Customers.TransportTypes.csproj" />
+    <ProjectReference Include="..\OauthAuthorization.TransportTypes\OauthAuthorization.TransportTypes.csproj" />
   </ItemGroup>
 
 </Project>

@@ -21,9 +21,9 @@ public class OauthController : Controller, IOauthService
     }
 
     [HttpGet, Route("token")]
-    public async Task<Result<TokenModel>> Token(Guid issuerId, Guid accepterId, string code)
+    public async Task<Result<TokenModel>> Token(string code)
     {
-        return await _oauthService.Token(issuerId, accepterId, code);
+        return await _oauthService.Token(code);
     }
 
     [HttpGet, Route("verify")]

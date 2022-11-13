@@ -7,23 +7,25 @@ using StackExchange.Redis;
 using System.Collections.Generic;
 using System.Net;
 using System.Text.Json.Serialization;
+using OauthAuthorization.TransportTypes.TransportModels;
+using Customers.CacheManager.Models.CacheInterfaces;
 
-namespace Customers.CacheManager
+namespace Core.CacheManager.Cleaners
 {
-    public class CustomerServiceTokenCleaner : BackgroundService
+    public class AuthorizationServiceTokenCleaner : BackgroundService
     {
         private readonly ILogger<CustomerServiceTokenCleaner> _logger;
         private readonly IServer _server;
         private readonly IDistributedCache _distributedCache;
 
-        public CustomerServiceTokenCleaner(ILogger<CustomerServiceTokenCleaner> logger, IDistributedCache distributedCache, IConfiguration configuration)
+        public AuthorizationServiceTokenCleaner(ILogger<CustomerServiceTokenCleaner> logger, IAuthorizationCache distributedCache, IConfiguration configuration)
         {
             _logger = logger;
 
-            var redisConnection = configuration.GetConnectionString("RedisConnection");
+            _distributedCache = distributedCache;
+            var redisConnection = configuration.GetConnectionString("AuthorizationRedisConnection");
             var options = ConfigurationOptions.Parse(redisConnection);
             var connection = ConnectionMultiplexer.Connect(options);
-            _distributedCache = distributedCache;
             var endPoint = connection.GetEndPoints().First();
             _server = connection.GetServer(endPoint);
         }
@@ -33,7 +35,7 @@ namespace Customers.CacheManager
             while (!stoppingToken.IsCancellationRequested)
             {
                 var dictionary = new Dictionary<string, TokenModel>();
-                var keys = _server.Keys(pattern: "*customer_token*").ToArray();
+                var keys = _server.Keys(pattern: "*service_token*").ToArray();
                 foreach (var key in keys)
                 {
                     var tokenJson = await _distributedCache.GetStringAsync(key);
@@ -45,11 +47,11 @@ namespace Customers.CacheManager
                     dictionary.Add(token.Token, token);
                 }
 
-                var tokensToRemove = (from kv in dictionary.GroupBy(x => x.Value.ClientId, x => x.Value)
+                var tokensToRemove = (from kv in dictionary.GroupBy(x => $"{x.Value.IssuerId}|{x.Value.AccepterId}", x => x.Value)
                                       let notLatestTokens = kv.Where(v => v.IssueDate != kv.Max(x => x.IssueDate))
                                       select notLatestTokens).SelectMany(x => x).ToList();
 
-                tokensToRemove.ForEach(x => _distributedCache.RemoveAsync(ChacheKeys.ClientToken(x.Token)));
+                tokensToRemove.ForEach(x => _distributedCache.RemoveAsync(CacheKeys.ServiceToken(x.IssuerId, x.AccepterId)));
 
                 dictionary.Clear();
                 await Task.Delay(1000, stoppingToken);
