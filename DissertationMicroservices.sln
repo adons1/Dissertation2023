@@ -21,6 +21,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Orders.Service", "Orders.Se
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Orders.TransportTypes", "Orders.Service.TransportTypes\Orders.TransportTypes.csproj", "{117C0D47-7693-4F22-89BB-F6FBFCEB1013}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Products.Service", "Products.Service\Products.Service.csproj", "{B1BA2451-6258-46A1-B0B5-B5D7AFD92B17}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Products.TransportTypes", "Products.TransportTypes\Products.TransportTypes.csproj", "{F9D4F582-E679-4B88-96C5-1C636E4797E7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -63,6 +67,14 @@ Global
 		{117C0D47-7693-4F22-89BB-F6FBFCEB1013}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{117C0D47-7693-4F22-89BB-F6FBFCEB1013}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{117C0D47-7693-4F22-89BB-F6FBFCEB1013}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B1BA2451-6258-46A1-B0B5-B5D7AFD92B17}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B1BA2451-6258-46A1-B0B5-B5D7AFD92B17}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B1BA2451-6258-46A1-B0B5-B5D7AFD92B17}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B1BA2451-6258-46A1-B0B5-B5D7AFD92B17}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F9D4F582-E679-4B88-96C5-1C636E4797E7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F9D4F582-E679-4B88-96C5-1C636E4797E7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F9D4F582-E679-4B88-96C5-1C636E4797E7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F9D4F582-E679-4B88-96C5-1C636E4797E7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
