@@ -11,7 +11,10 @@ namespace Products.TransportTypes.TransportServices.Contracts;
 public interface IProductsService
 {
     public Task<Result<IEnumerable<Product>>> SelectAll();
-    public Task<Result<Product>> Select();
-    public Task<Result<bool>> Delete();
-    public Task<Result<bool>> Update();
+    public Task<Result<IEnumerable<Product>>> SelectByIds(IEnumerable<Guid> ids);
+    public Task<Result<Product>> Select(Guid id);
+    public Task<Result<bool>> Delete(Guid id);
+    public Task<Result<bool>> Update(Product product);
+    public Task<Result<ConsumeProductsResult>> ConsumeProducts(Guid id, int quantity);
+    public Task<Result<bool>> SupplyProducts(Guid id, int quantity);
 }

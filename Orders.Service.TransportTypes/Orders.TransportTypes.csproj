@@ -7,7 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="TransportModels\" />
+    <ProjectReference Include="..\Core\Core.csproj" />
+    <ProjectReference Include="..\CustomersService.TransportTypes\Customers.TransportTypes.csproj" />
+    <ProjectReference Include="..\OauthAuthorization.TransportTypes\OauthAuthorization.TransportTypes.csproj" />
+    <ProjectReference Include="..\Products.TransportTypes\Products.TransportTypes.csproj" />
   </ItemGroup>
 
 </Project>

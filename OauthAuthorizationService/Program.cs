@@ -18,6 +18,7 @@ builder.Services.AddStackExchangeRedisCache(options =>
 builder.Services.AddLinqToDBContext<ServicesDbContext>((provider, options) => {
     options.UseSqlServer(dbConnection);
 });
+builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 builder.Services.AddTransient<IOauthService, OauthService>();
 builder.Services.AddTransient<CacheProvider>();
 builder.Services.AddTransient<ServiceProvider>();

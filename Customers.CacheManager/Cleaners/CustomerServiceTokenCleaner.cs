@@ -9,6 +9,7 @@ using System.Net;
 using System.Text.Json.Serialization;
 using OauthAuthorization.TransportTypes.TransportModels;
 using Customers.CacheManager.Models.CacheInterfaces;
+using Customers.TransportTypes.TransportModels;
 
 namespace Core.CacheManager.Cleaners
 {
@@ -34,26 +35,26 @@ namespace Core.CacheManager.Cleaners
         {
             while (!stoppingToken.IsCancellationRequested)
             {
-                var dictionary = new Dictionary<string, ClientTokenModel>();
-                var keys = _server.Keys(pattern: "*customer_token*").ToArray();
-                foreach (var key in keys)
-                {
-                    var tokenJson = await _distributedCache.GetStringAsync(key);
+                //var dictionary = new Dictionary<string, ClientTokenModel>();
+                //var keys = _server.Keys(pattern: "*customer_token*").ToArray();
+                //foreach (var key in keys)
+                //{
+                //    var tokenJson = await _distributedCache.GetStringAsync(key);
 
-                    var token = JsonConvert.DeserializeObject<ClientTokenModel>(tokenJson);
-                    if (DateTime.UtcNow - token.IssueDate > new TimeSpan(1, 0, 0))
-                        await _distributedCache.RemoveAsync(key);
+                //    var token = JsonConvert.DeserializeObject<ClientTokenModel>(tokenJson);
+                //    if (DateTime.UtcNow - token.IssueDate > new TimeSpan(1, 0, 0))
+                //        await _distributedCache.RemoveAsync(key);
 
-                    dictionary.Add(token.Token, token);
-                }
+                //    dictionary.Add(token.Token, token);
+                //}
 
-                var tokensToRemove = (from kv in dictionary.GroupBy(x => x.Value.ClientId, x => x.Value)
-                                      let notLatestTokens = kv.Where(v => v.IssueDate != kv.Max(x => x.IssueDate))
-                                      select notLatestTokens).SelectMany(x => x).ToList();
+                //var tokensToRemove = (from kv in dictionary.GroupBy(x => x.Value.ClientId, x => x.Value)
+                //                      let notLatestTokens = kv.Where(v => v.IssueDate != kv.Max(x => x.IssueDate))
+                //                      select notLatestTokens).SelectMany(x => x).ToList();
 
-                tokensToRemove.ForEach(x => _distributedCache.RemoveAsync(CacheKeys.ClientToken(x.Token)));
+                //tokensToRemove.ForEach(x => _distributedCache.RemoveAsync(CacheKeys.ClientToken(x.Token)));
 
-                dictionary.Clear();
+                //dictionary.Clear();
                 await Task.Delay(1000, stoppingToken);
             }
         }

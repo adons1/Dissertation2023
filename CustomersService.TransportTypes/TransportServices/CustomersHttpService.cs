@@ -1,8 +1,10 @@
 ﻿using Core;
 using Core.Services;
+using Customers.TransportTypes.TransportModels;
 using CustomersService.TransportTypes.TransportModels;
 using CustomersService.TransportTypes.TransportServices.Contracts;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Configuration;
 using OauthAuthorization.TransportTypes.Http;
@@ -18,17 +20,18 @@ namespace CustomersService.TransportTypes.TransportServices;
 
 public class CustomersHttpService : HttpServiceBase, ICustomersService, IOauthServiceAuthorize
 {
-    public CustomersHttpService(IDistributedCache distributedCache, IConfiguration configuration)
+    public CustomersHttpService(IHttpContextAccessor httpContextAccessor, IDistributedCache distributedCache, IConfiguration configuration)
     {
         _baseUrl = configuration["Credentials:CustomersService:url"].ToString();
 
         AuthorizedHttp = new OauthHttp(
+            httpContextAccessor: httpContextAccessor,
             disctibutedCache:   distributedCache,
             configuration:      configuration,
             baseUrl:            _baseUrl,
             issuerId:           Guid.Parse(configuration["Credentials:Own:id"].ToString()),
             accepterId:         Guid.Parse(configuration["Credentials:CustomersService:id"].ToString()),
-            password:           configuration["Credentials:CustomersService:secret"].ToString()
+            password:           configuration["Credentials:Own:secret"].ToString()
             );
     }
 
@@ -37,9 +40,9 @@ public class CustomersHttpService : HttpServiceBase, ICustomersService, IOauthSe
         return await PostAuthorizedAsync<bool>($"/customers/register", body:customer);
     }
 
-    public Task<Result<bool>> Delete(Guid guid)
+    public async Task<Result<bool>> Delete(Guid guid)
     {
-        throw new NotImplementedException();
+        return await GetAuthorizedAsync<bool>($"/customers/delete", new { id = guid });
     }
 
     public async Task<Result<IEnumerable<Customer>>?> SelectAll()
@@ -52,13 +55,25 @@ public class CustomersHttpService : HttpServiceBase, ICustomersService, IOauthSe
         return await GetAuthorizedAsync<Customer?>($"/customers/select_by_id", new { id = guid });
     }
 
-    public Task<Result<ClientTokenModel>> Login(LoginCustomer customer)
+    public async Task<Result<ClientTokenModel>> Login(LoginCustomer customer)
     {
-        throw new NotImplementedException();
+        return await PostAuthorizedAsync<ClientTokenModel?>($"/customers/login", body: customer);
     }
 
-    public Task<Result<TokenModel>> Token(string code)
+    public async Task<Result<TokenModel>> Token(string code)
     {
-        throw new NotImplementedException();
+        return await GetAuthorizedAsync<TokenModel?>($"/customers/delete", new { code });
     }
+
+    public async Task<Result<bool>> Waste(double sum)
+    {
+        return await GetAuthorizedAsync<bool>($"/customers/delete", new { sum });
+    }
+
+    public async Task<Result<bool>> Earn(double sum)
+    {
+        return await GetAuthorizedAsync<bool>($"/customers/delete", new { sum });
+    }
+
+
 }

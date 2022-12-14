@@ -12,4 +12,5 @@ public interface ICustomersProvider
     IEnumerable<CustomerTransport> SelectAll(IEnumerable<Guid>? excludeGuids = null);
     bool Create(CustomerIdentity customer);
     bool Delete(Guid guid);
+    bool Update(CustomerTransport customer);
 }

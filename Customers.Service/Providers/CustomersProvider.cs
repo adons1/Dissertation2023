@@ -6,6 +6,7 @@ using CustomersService.TransportTypes.TransportModels;
 using CustomerTransport = CustomersService.TransportTypes.TransportModels.Customer;
 using System.Linq.Expressions;
 using Core.Cryptography;
+using Microsoft.Identity.Client;
 
 namespace CustomersService.Providers;
 
@@ -68,6 +69,7 @@ public class CustomersProvider : ICustomersProvider
         if (customer == null) return false;
 
         _customersContext.CustomerIdentities.Remove(customer);
+        _customersContext.SaveChanges();
 
         return true;
     }
@@ -84,5 +86,19 @@ public class CustomersProvider : ICustomersProvider
             customer.Email, customer.Customer.Birthday, customer.Customer.Account)
             :
             null;
+    }
+
+    public bool Update(CustomerTransport customer)
+    {
+        _customersContext.Customers.Update(new Models.Customer
+        {
+            Id = customer.Id,
+            FirstName = customer.FirstName,
+            LastName = customer.LastName,
+            Birthday = customer.Birthday,
+            Account =  customer.Account
+        });
+
+        return true;
     }
 }

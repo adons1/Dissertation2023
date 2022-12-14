@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace OauthAuthorization.TransportTypes.TransportModels;
+namespace Customers.TransportTypes.TransportModels;
 
 public class ClientTokenModel
 {

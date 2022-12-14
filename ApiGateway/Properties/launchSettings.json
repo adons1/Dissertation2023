@@ -1,25 +1,25 @@
 ﻿{
   "iisSettings": {
     "windowsAuthentication": false,
-    "anonymousAuthentication": false,
+    "anonymousAuthentication": true,
     "iisExpress": {
-      "applicationUrl": "http://localhost:50963",
-      "sslPort": 44376
+      "applicationUrl": "http://localhost:20350",
+      "sslPort": 0
     }
   },
   "profiles": {
-    "DissertationMicroservices": {
+    "http": {
       "commandName": "Project",
       "dotnetRunMessages": true,
       "launchBrowser": false,
-      "applicationUrl": "http://192.168.1.75:5232",
+      "applicationUrl": "http://192.168.1.75:8080",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
     },
     "IIS Express": {
       "commandName": "IISExpress",
-      "launchBrowser": false,
+      "launchBrowser": true,
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }

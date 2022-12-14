@@ -13,11 +13,14 @@ using System.Web;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Configuration;
 using OauthAuthorization.TransportTypes.TransportModels;
+using authAuthorization.TransportTypes.TransportModels.Enums;
+using Microsoft.AspNetCore.Http;
 
 namespace OauthAuthorization.TransportTypes.Http;
 
 public class OauthHttp : IAuthorizedHttp
 {
+    protected string _clientToken;
     protected string _authorizationBaseUrl;
     protected string _baseUrl;
     protected Guid _issuerId;
@@ -26,12 +29,13 @@ public class OauthHttp : IAuthorizedHttp
 
     protected IDistributedCache _disctibutedCache;
     protected IConfiguration _configuration;
-    public OauthHttp(IDistributedCache disctibutedCache, IConfiguration configuration, 
+    public OauthHttp(IHttpContextAccessor httpContextAccessor, IDistributedCache disctibutedCache, IConfiguration configuration, 
         string baseUrl, Guid issuerId, Guid accepterId, string password)
     {
         _disctibutedCache = disctibutedCache;
         _configuration = configuration;
 
+        _clientToken = httpContextAccessor.HttpContext.Request.Headers["Authorize-Client"].ToString();
         _authorizationBaseUrl = configuration["Credentials:AuthorizationService:url"].ToString();
         _baseUrl = baseUrl;
         _issuerId = issuerId;
@@ -46,6 +50,8 @@ public class OauthHttp : IAuthorizedHttp
             if (hasToken)
                 client.DefaultRequestHeaders.Add("Authorize-Service", token.Token);
 
+            client.DefaultRequestHeaders.Add("Authorize-Client", _clientToken);
+
             var requestUrl = HttpServiceBase.GetUrl(_baseUrl, url, parametres);
             var response = await client.GetAsync(requestUrl);
 
@@ -54,9 +60,11 @@ public class OauthHttp : IAuthorizedHttp
                 var content = await response.Content.ReadAsStringAsync();
 
                 var result = JsonConvert.DeserializeObject<Result<TResult>>(content);
-                var payload = JsonConvert.DeserializeObject<TResult>(JObject.Parse(content)["payload"].ToString());
-
-                result.Payload = payload;
+                try
+                {
+                    result.Payload = JsonConvert.DeserializeObject<TResult>(JObject.Parse(content)["payload"].ToString());
+                }
+                catch { }
 
                 return result;
             }
@@ -65,8 +73,8 @@ public class OauthHttp : IAuthorizedHttp
             {
                 client.DefaultRequestHeaders.Remove("Authorize-Service");
 
-                var obtainedCode = await Authorize(client);
-                var obtainedToken = await Token(client, obtainedCode);
+                var obtainedCode = await Authorize();
+                var obtainedToken = await Token(obtainedCode);
 
                 await setTokenCache(obtainedToken);
 
@@ -85,6 +93,8 @@ public class OauthHttp : IAuthorizedHttp
             if (hasToken)
                 client.DefaultRequestHeaders.Add("Authorize-Service", token.Token);
 
+            client.DefaultRequestHeaders.Add("Authorize-Client", _clientToken);
+
             var requestUrl = HttpServiceBase.GetUrl(_baseUrl, url, query);
 
             HttpServiceBase.SetHeader(client, header);
@@ -98,9 +108,11 @@ public class OauthHttp : IAuthorizedHttp
                 var content = await response.Content.ReadAsStringAsync();
 
                 var result = JsonConvert.DeserializeObject<Result<TResult>>(content);
-                var payload = JsonConvert.DeserializeObject<TResult>(JObject.Parse(content)["payload"].ToString());
-
-                result.Payload = payload;
+                try
+                {
+                    result.Payload = JsonConvert.DeserializeObject<TResult>(JObject.Parse(content)["payload"].ToString());
+                }
+                catch { }
 
                 return result;
             }
@@ -109,8 +121,8 @@ public class OauthHttp : IAuthorizedHttp
             {
                 client.DefaultRequestHeaders.Remove("Authorize-Service");
 
-                var obtainedCode = await Authorize(client);
-                var obtainedToken = await Token(client, obtainedCode);
+                var obtainedCode = await Authorize();
+                var obtainedToken = await Token(obtainedCode);
 
                 await setTokenCache(obtainedToken);
 
@@ -121,9 +133,11 @@ public class OauthHttp : IAuthorizedHttp
         };
     }
     #region Private
-    private async Task<AuthCodeModel> Authorize(HttpClient client)
+    private async Task<AuthCodeModel> Authorize()
     {
-        var authUrl = HttpServiceBase.GetUrl(
+        using(var client = new HttpClient())
+        {
+            var authUrl = HttpServiceBase.GetUrl(
                     _authorizationBaseUrl,
                     "/oauth/authorize",
                     new
@@ -133,20 +147,23 @@ public class OauthHttp : IAuthorizedHttp
                         password = _password
                     });
 
-        var response = await client.GetAsync(authUrl);
+            var response = await client.GetAsync(authUrl);
 
-        if (!response.IsSuccessStatusCode) throw new Exception(response.StatusCode.ToString());
+            if (!response.IsSuccessStatusCode) throw new Exception(response.StatusCode.ToString());
 
-        var content = await response.Content.ReadAsStringAsync();
+            var content = await response.Content.ReadAsStringAsync();
 
-        var payload = JsonConvert.DeserializeObject<AuthCodeModel>(JObject.Parse(content)["payload"].ToString());
+            var payload = JsonConvert.DeserializeObject<AuthCodeModel>(JObject.Parse(content)["payload"].ToString());
 
-        return payload;
+            return payload;
+        }
     }
 
-    private async Task<TokenModel> Token(HttpClient client, AuthCodeModel code)
+    private async Task<TokenModel> Token(AuthCodeModel code)
     {
-        var tokenUrl = HttpServiceBase.GetUrl(
+        using (var client = new HttpClient())
+        {
+            var tokenUrl = HttpServiceBase.GetUrl(
                     _baseUrl,
                     "/oauth/token",
                     new
@@ -154,13 +171,14 @@ public class OauthHttp : IAuthorizedHttp
                         code = code.Code,
                     });
 
-        var response = await client.GetAsync(tokenUrl);
+            var response = await client.GetAsync(tokenUrl);
 
-        if (!response.IsSuccessStatusCode) throw new Exception(response.StatusCode.ToString());
+            if (!response.IsSuccessStatusCode) throw new Exception(response.StatusCode.ToString());
 
-        var content = await response.Content.ReadAsStringAsync();
+            var content = await response.Content.ReadAsStringAsync();
 
-        return JsonConvert.DeserializeObject<TokenModel>(JObject.Parse(content)["payload"].ToString());
+            return JsonConvert.DeserializeObject<TokenModel>(JObject.Parse(content)["payload"].ToString());
+        } 
     }
 
     private async Task<(bool, TokenModel)> getTokenCache()

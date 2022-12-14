@@ -1,33 +1,50 @@
 ﻿using Core;
+using Customers.TransportTypes.TransportServices.Contracts;
 using CustomersService.TransportTypes.TransportModels;
 using CustomersService.TransportTypes.TransportServices.Contracts;
 using Microsoft.AspNetCore.Mvc;
+using OauthAuthorization.TransportTypes.Attributes;
+using Orders.Service.Services;
 using Orders.Service.TransportTypes.TransportServices.Contracts;
+using Orders.TransportTypes.TransportModels;
 using Products.TransportTypes.TransportModels;
 using Products.TransportTypes.TransportServices.Contracts;
+using System.CodeDom;
 
 namespace Orders.Service.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
+[AuthorizeService]
 public class OrdersController : Controller, IOrdersService
-{
-    ICustomersService _customersService;
-    IProductsService _productsService;
-    public OrdersController(ICustomersService customersService, IProductsService productsService)
-    {
-        _customersService = customersService;
-        _productsService = productsService;
-    }
+{ 
     readonly IOrdersService _ordersService;
-    [HttpGet, Route("select_all_customers")]
-    public async Task<Result<IEnumerable<Customer>>> Index()
+    public OrdersController(IOrdersService ordersService)
     {
-        return await _customersService.SelectAll();
+        _ordersService = ordersService;
     }
-    [HttpGet, Route("select_all_products")]
-    public async Task<Result<IEnumerable<Product>>> SelectAllProducts()
+
+    [HttpGet, Route("cancel")]
+    public async Task<Result<bool>> Cancel(Guid id)
     {
-        return await _productsService.SelectAll();
+        return await _ordersService.Cancel(id);
+    }
+
+    [HttpGet, Route("select_all")]
+    public async Task<Result<IEnumerable<Order>>> SelectAll()
+    {
+        return await _ordersService.SelectAll();
+    }
+
+    [HttpGet, Route("select_by_id")]
+    public async Task<Result<Order>> SelectById(Guid id)
+    {
+        return await _ordersService.SelectById(id);
+    }
+
+    [HttpPost, Route("create")]
+    public async Task<Result<Order>> Create([FromBody] IEnumerable<Guid> ids)
+    {
+        return await _ordersService.Create(ids);
     }
 }

@@ -91,6 +91,8 @@ public abstract class HttpServiceBase : IAuthorizedHttp
 
     public static void SetHeader(HttpClient client, object? headerParams)
     {
+        if (headerParams == null) return;
+
         var properties = from p in headerParams.GetType().GetProperties()
                          where p.GetValue(headerParams, null) != null
                          select new KeyValuePair<string, string>(p.Name, p.GetValue(headerParams, null).ToString());
