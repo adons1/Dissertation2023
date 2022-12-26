@@ -65,14 +65,14 @@ public class CustomersHttpService : HttpServiceBase, ICustomersService, IOauthSe
         return await GetAuthorizedAsync<TokenModel?>($"/customers/delete", new { code });
     }
 
-    public async Task<Result<bool>> Waste(double sum)
+    public async Task<Result<bool>> Waste(IEnumerable<Guid> productIds, double sum)
     {
-        return await GetAuthorizedAsync<bool>($"/customers/delete", new { sum });
+        return await PostAuthorizedAsync<bool>($"/customers/waste", query:new { sum }, body: productIds);
     }
 
     public async Task<Result<bool>> Earn(double sum)
     {
-        return await GetAuthorizedAsync<bool>($"/customers/delete", new { sum });
+        return await GetAuthorizedAsync<bool>($"/customers/earn", new { sum });
     }
 
 

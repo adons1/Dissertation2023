@@ -19,6 +19,8 @@ using OauthAuthorization.TransportTypes.TransportModels;
 using Customers.TransportTypes.TransportServices.Contracts;
 using Customers.TransportTypes.Tokens;
 using System.Security.Principal;
+using Core.Exceptions;
+using Products.TransportTypes.TransportServices.Contracts;
 
 namespace CustomersService.Services;
 
@@ -26,6 +28,7 @@ public class CustomersService : ICustomersService, IOauthServiceAuthorize
 {
     readonly ICustomersProvider _customersProvider;
     readonly IOauthService _oauthService;
+    readonly IProductsService _productsService;
     readonly IDistributedCache _distributedCache;
     readonly IClientTokensCache _clientTokensCache;
     readonly IObtainCustomerIdentity _obtainIdentity;
@@ -34,6 +37,7 @@ public class CustomersService : ICustomersService, IOauthServiceAuthorize
     public CustomersService(
         ICustomersProvider customersProvider, 
         IOauthService oauthService, 
+        IProductsService productsService, 
         IDistributedCache distributedCache,
         IClientTokensCache clientTokensCache,
         IObtainCustomerIdentity obtainIdentity,
@@ -45,6 +49,7 @@ public class CustomersService : ICustomersService, IOauthServiceAuthorize
         _clientTokensCache = clientTokensCache;
         _obtainIdentity = obtainIdentity;
         _configuration = configuration;
+        _productsService = productsService;
         //_user = obtainCustomer.Identity().Result;
     }
 
@@ -126,17 +131,31 @@ public class CustomersService : ICustomersService, IOauthServiceAuthorize
         return await Task.FromResult(new SuccessResult<ClientTokenModel>(tokenModel));
     }
 
-    public async Task<Result<bool>> Waste(double sum)
+    public async Task<Result<bool>> Waste(IEnumerable<Guid> productsIds, double sum)
     {
         var identityGuid = await _obtainIdentity.Identity();
         var identity = _customersProvider.SelectById(identityGuid);
 
         if (sum > identity.Account)
-            return new FailureResult<bool>("Not enough money");
+            return new FailureResult<bool>(statusCode: System.Net.HttpStatusCode.Conflict, message:"Not enough money");
 
+        var previousSum = identity.Account;
         identity.Account -= sum;
 
-        _customersProvider.Update(identity);
+        //_customersProvider.Update(identity);
+
+        try
+        {
+            foreach(var id in productsIds)
+            {
+                await _productsService.ConsumeProducts(id, 5);
+            }
+        }
+        catch(RollbackException rollback)
+        {
+            //identity.Account = previousSum;
+            //_customersProvider.Update(identity);
+        }
 
         await _distributedCache.RemoveAsync(CacheKeys.Customer(identity.Id));
         return new SuccessResult<bool>();

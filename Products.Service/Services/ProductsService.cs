@@ -13,6 +13,7 @@ using OauthAuthorization.TransportTypes.TransportServices.Contracts;
 using Products.Service.Providers.ProvidersContracts;
 using Products.TransportTypes.TransportModels;
 using Products.TransportTypes.TransportServices.Contracts;
+using System.Net;
 
 namespace Products.Service.Services;
 
@@ -55,13 +56,13 @@ public class ProductsService : IProductsService, IOauthServiceAuthorize
         return await Task.FromResult(products);
     }
 
-    public async Task<Result<ConsumeProductsResult>> ConsumeProducts(Guid id, int quantity)
+    public async Task<Result<ConsumeProductsResult>> ConsumeProducts(Guid productId, int quantity)
     {
-        var product = _productsProvider.SelectById(id);
+        var product = _productsProvider.SelectById(Guid.Parse("AFB777CC-BAB1-4F54-BD8C-A5915EB55D79"));
         if (product == null)
-            return await Task.FromResult(new FailureResult<ConsumeProductsResult>(message: $"Product with id {id} has not been found", payload: ConsumeProductsResult.Failure));
+            return await Task.FromResult(new FailureResult<ConsumeProductsResult>(statusCode: HttpStatusCode.Conflict, message: $"Product with id {productId} has not been found", payload: ConsumeProductsResult.Failure));
         if (product.Quantity < quantity)
-            return await Task.FromResult(new FailureResult<ConsumeProductsResult>(message: $"There are no ", payload: ConsumeProductsResult.NotEnoughProducts));
+            return await Task.FromResult(new FailureResult<ConsumeProductsResult>(statusCode:HttpStatusCode.Conflict, message: $"There are no ", payload: ConsumeProductsResult.NotEnoughProducts));
 
         product.Quantity -= quantity;
 

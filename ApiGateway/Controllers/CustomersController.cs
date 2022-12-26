@@ -48,10 +48,10 @@ public class CustomersController : Controller, ICustomersService
         return await _customersService.Login(customer);
     }
 
-    [HttpGet, Route("waste"), AuthorizeClient]
-    public async Task<Result<bool>> Waste(double sum)
+    [HttpPost, Route("waste"), AuthorizeClient]
+    public async Task<Result<bool>> Waste([FromBody]IEnumerable<Guid> productIds, double sum)
     {
-        return await _customersService.Waste(sum);
+        return await _customersService.Waste(productIds, sum);
     }
 
     [HttpGet, Route("earn"), AuthorizeClient]

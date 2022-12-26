@@ -15,6 +15,7 @@ using Microsoft.Extensions.Configuration;
 using OauthAuthorization.TransportTypes.TransportModels;
 using authAuthorization.TransportTypes.TransportModels.Enums;
 using Microsoft.AspNetCore.Http;
+using Core.Exceptions;
 
 namespace OauthAuthorization.TransportTypes.Http;
 
@@ -28,12 +29,14 @@ public class OauthHttp : IAuthorizedHttp
     protected string _password;
 
     protected IDistributedCache _disctibutedCache;
+    protected IHttpContextAccessor _httpContextAccessor;
     protected IConfiguration _configuration;
     public OauthHttp(IHttpContextAccessor httpContextAccessor, IDistributedCache disctibutedCache, IConfiguration configuration, 
         string baseUrl, Guid issuerId, Guid accepterId, string password)
     {
         _disctibutedCache = disctibutedCache;
         _configuration = configuration;
+        _httpContextAccessor = httpContextAccessor;
 
         _clientToken = httpContextAccessor.HttpContext.Request.Headers["Authorize-Client"].ToString();
         _authorizationBaseUrl = configuration["Credentials:AuthorizationService:url"].ToString();
@@ -44,6 +47,17 @@ public class OauthHttp : IAuthorizedHttp
     }
     public async Task<Result<TResult>> GetAuthorizedAsync<TResult>(string url, object parametres)
     {
+        string reqid = "";
+        var requestId = _httpContextAccessor.HttpContext.Request.Headers["RequestID"];
+        if (string.IsNullOrEmpty(requestId))
+        {
+            reqid = Guid.NewGuid().ToString();
+        }
+        else
+        {
+            reqid = requestId.ToString();
+        }
+
         using (var client = new HttpClient())
         {
             var (hasToken, token) = await getTokenCache();
@@ -51,6 +65,7 @@ public class OauthHttp : IAuthorizedHttp
                 client.DefaultRequestHeaders.Add("Authorize-Service", token.Token);
 
             client.DefaultRequestHeaders.Add("Authorize-Client", _clientToken);
+            client.DefaultRequestHeaders.Add("RequestID", reqid);
 
             var requestUrl = HttpServiceBase.GetUrl(_baseUrl, url, parametres);
             var response = await client.GetAsync(requestUrl);
@@ -60,6 +75,9 @@ public class OauthHttp : IAuthorizedHttp
                 var content = await response.Content.ReadAsStringAsync();
 
                 var result = JsonConvert.DeserializeObject<Result<TResult>>(content);
+                if (result.StatusCode == System.Net.HttpStatusCode.Conflict)
+                    throw new RollbackException(Guid.Parse(reqid), response.StatusCode.ToString());
+
                 try
                 {
                     result.Payload = JsonConvert.DeserializeObject<TResult>(JObject.Parse(content)["payload"].ToString());
@@ -81,12 +99,23 @@ public class OauthHttp : IAuthorizedHttp
                 return await GetAuthorizedAsync<TResult>(url, parametres);
             }
 
-            throw new Exception(response.StatusCode.ToString());
+            throw new RollbackException(Guid.Parse(reqid), response.StatusCode.ToString());
         };
     }
 
     public async Task<Result<TResult>> PostAuthorizedAsync<TResult>(string url, object? header = null, object? query = null, object? body = null)
     {
+        string reqid = "";
+        var requestId = _httpContextAccessor.HttpContext.Request.Headers["RequestID"];
+        if(string.IsNullOrEmpty(requestId))
+        {
+            reqid = Guid.NewGuid().ToString();
+        }
+        else
+        {
+            reqid = requestId.ToString();
+        }
+
         using (var client = new HttpClient())
         {
             var (hasToken, token) = await getTokenCache();
@@ -94,6 +123,7 @@ public class OauthHttp : IAuthorizedHttp
                 client.DefaultRequestHeaders.Add("Authorize-Service", token.Token);
 
             client.DefaultRequestHeaders.Add("Authorize-Client", _clientToken);
+            client.DefaultRequestHeaders.Add("RequestID", reqid);
 
             var requestUrl = HttpServiceBase.GetUrl(_baseUrl, url, query);
 
@@ -108,6 +138,9 @@ public class OauthHttp : IAuthorizedHttp
                 var content = await response.Content.ReadAsStringAsync();
 
                 var result = JsonConvert.DeserializeObject<Result<TResult>>(content);
+                if (result.StatusCode == System.Net.HttpStatusCode.Conflict)
+                    throw new RollbackException(Guid.Parse(reqid), response.StatusCode.ToString());
+
                 try
                 {
                     result.Payload = JsonConvert.DeserializeObject<TResult>(JObject.Parse(content)["payload"].ToString());
@@ -129,7 +162,7 @@ public class OauthHttp : IAuthorizedHttp
                 return await PostAuthorizedAsync<TResult>(url, header, query, body);
             }
 
-            throw new Exception(response.StatusCode.ToString());
+            throw new RollbackException(Guid.Parse(reqid), response.StatusCode.ToString());
         };
     }
     #region Private

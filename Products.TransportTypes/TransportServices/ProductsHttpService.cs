@@ -30,9 +30,9 @@ public class ProductsHttpService : HttpServiceBase, IProductsService
             );
     }
 
-    public async Task<Result<ConsumeProductsResult>> ConsumeProducts(Guid id, int quantity)
+    public async Task<Result<ConsumeProductsResult>> ConsumeProducts(Guid productId, int quantity)
     {
-        return await GetAuthorizedAsync<ConsumeProductsResult>($"/products/consume");
+        return await GetAuthorizedAsync<ConsumeProductsResult>($"/products/consume", new { productId, quantity });
     }
 
     public async Task<Result<bool>> Delete(Guid id)

@@ -1,4 +1,5 @@
-﻿using Core.Services;
+﻿using Core.Exceptions;
+using Core.Services;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Net.Http.Json;
@@ -30,7 +31,7 @@ public abstract class HttpServiceBase : IAuthorizedHttp
                 return result;
             }
 
-            throw new Exception(response.StatusCode.ToString());
+            throw new RollbackException(Guid.NewGuid(), response.StatusCode.ToString());
         };
     }
     protected async Task<Result<TResult>> PostAsync<TResult>(string url, object? header = null, object? query = null, object? body = null)
@@ -57,7 +58,7 @@ public abstract class HttpServiceBase : IAuthorizedHttp
                 return result;
             }
 
-            throw new Exception(response.StatusCode.ToString());
+            throw new RollbackException(Guid.NewGuid(), response.StatusCode.ToString());
         };
     }
     public async Task<Result<TResult>> GetAuthorizedAsync<TResult>(string url, object? parametres = null)

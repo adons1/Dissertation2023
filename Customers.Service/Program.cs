@@ -8,6 +8,8 @@ using CustomersService.TransportTypes.TransportServices.Contracts;
 using Microsoft.EntityFrameworkCore;
 using OauthAuthorization.TransportTypes.TransportServices;
 using OauthAuthorization.TransportTypes.TransportServices.Contracts;
+using Products.TransportTypes.TransportServices;
+using Products.TransportTypes.TransportServices.Contracts;
 
 var builder = WebApplication.CreateBuilder(args);
 string dbConnection = builder.Configuration.GetConnectionString("DatabaseConnection");
@@ -29,6 +31,7 @@ builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 builder.Services.AddDbContext<CustomersDbContext>(options => options.UseSqlServer(dbConnection)); 
 builder.Services.AddTransient<ICustomersProvider, CustomersProvider>();
 builder.Services.AddTransient<ICustomersService, CustomersService.Services.CustomersService>();
+builder.Services.AddTransient<IProductsService, ProductsHttpService>();
 builder.Services.AddTransient<IOauthServiceAuthorize, CustomersService.Services.CustomersService>();
 builder.Services.AddTransient<IOauthService, OauthHttpService>();
 builder.Services.AddTransient<IObtainCustomerIdentity, ObtainCustomerIdentity>();

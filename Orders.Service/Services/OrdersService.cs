@@ -16,6 +16,8 @@ using Products.TransportTypes.TransportServices.Contracts;
 using AutoMapper;
 using StackExchange.Redis;
 using System.Linq;
+using Core.Exceptions;
+using System;
 
 namespace Orders.Service.Services;
 
@@ -28,6 +30,7 @@ public class OrdersService : IOrdersService, IOauthServiceAuthorize
     IOrdersProvider _ordersProvider;
     IObtainCustomerIdentity _obtainIdentity;
     IDistributedCache _distributedCache;
+    IHttpContextAccessor _httpContext;
 
     public OrdersService(
         IMapper mapper,
@@ -36,7 +39,8 @@ public class OrdersService : IOrdersService, IOauthServiceAuthorize
         IProductsService productsService,
         IOrdersProvider ordersProvider,
         IDistributedCache distributedCache,
-        IObtainCustomerIdentity obtainIdentity)
+        IObtainCustomerIdentity obtainIdentity,
+        IHttpContextAccessor httpContext)
     {
         _mapper = mapper;
         _customersService = customersService;
@@ -45,6 +49,7 @@ public class OrdersService : IOrdersService, IOauthServiceAuthorize
         _ordersProvider = ordersProvider;
         _obtainIdentity = obtainIdentity;
         _distributedCache = distributedCache;
+        _httpContext = httpContext;
     }
 
     public async Task<Result<bool>> Cancel(Guid id)
@@ -126,23 +131,36 @@ public class OrdersService : IOrdersService, IOauthServiceAuthorize
         var products = (await _productsService.SelectByIds(productsId))?.Payload;
 
         var totalPrice = products.Sum(x => x.Price);
-        if (identity.Payload.Account < totalPrice)
-            return new FailureResult<OrderTransport>("Not enough funds");
+        //if (identity.Payload.Account < totalPrice)
+        //    return new FailureResult<OrderTransport>("Not enough funds");
 
-        var emptyProduct = products.Where(x => x.Quantity == 0);
-        if (emptyProduct.Count() == 0)
-            return new FailureResult<OrderTransport>($"Not enough products {string.Join(", ", emptyProduct.Select(x => x.Id))}");
+        //var emptyProduct = products.Where(x => x.Quantity == 0);
+        //if (emptyProduct.Count() == 0)
+        //    return new FailureResult<OrderTransport>($"Not enough products {string.Join(", ", emptyProduct.Select(x => x.Id))}");
 
+        var createdOrdersIds = new List<Guid?>();
         Guid? orderId = null;
         foreach (var productId in productsId)
         {
             orderId = _ordersProvider.CreateById(orderId, identity.Payload.Id, productId);
+            createdOrdersIds.Add(orderId);
         }
 
         if(!orderId.HasValue)
             return new FailureResult<OrderTransport>("Error while creating an order");
 
-        await _customersService.Waste(totalPrice);
+        try
+        {
+            await _customersService.Waste(productsId, totalPrice);
+        }
+        catch (RollbackException rollback)
+        {
+            foreach(var id in createdOrdersIds)
+            {
+                if(id.HasValue) _ordersProvider.DeleteById((Guid)id);
+            }
+            return new FailureResult<OrderTransport>();
+        }
 
         var order = (await SelectById(orderId.Value))?.Payload;
         

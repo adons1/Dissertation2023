@@ -76,7 +76,7 @@ public class CustomersProvider : ICustomersProvider
 
     private CustomerTransport? SelectByParameter(Expression<Func<CustomerIdentity, bool>> expression)
     {
-        var customer = _customersContext.CustomerIdentities.Include(x => x.Customer)
+        var customer = _customersContext.CustomerIdentities.Include(x => x.Customer).AsNoTracking()
             .SingleOrDefault(expression.Compile());
 
         return
@@ -98,6 +98,7 @@ public class CustomersProvider : ICustomersProvider
             Birthday = customer.Birthday,
             Account =  customer.Account
         });
+        _customersContext.SaveChanges();
 
         return true;
     }

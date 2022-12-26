@@ -49,7 +49,7 @@ public class ProductsController : Controller, IProductsService
     public async Task<Result<ConsumeProductsResult>> ConsumeProducts(Guid id, int quantity)
     {
         if (quantity <= 0)
-            return new FailureResult<ConsumeProductsResult>(message: "quantity has to be more than 0", payload: ConsumeProductsResult.Failure);
+            return new FailureResult<ConsumeProductsResult>(statusCode: System.Net.HttpStatusCode.Conflict, message: "quantity has to be more than 0", payload: ConsumeProductsResult.Failure);
 
         return await _productsService.ConsumeProducts(id, quantity);
     }

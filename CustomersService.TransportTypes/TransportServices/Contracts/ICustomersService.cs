@@ -2,6 +2,7 @@
 using Customers.TransportTypes.TransportModels;
 using CustomersService.TransportTypes.TransportModels;
 using OauthAuthorization.TransportTypes.TransportModels;
+using Products.TransportTypes.TransportModels;
 
 namespace CustomersService.TransportTypes.TransportServices.Contracts;
 
@@ -12,6 +13,6 @@ public interface ICustomersService
     Task<Result<ClientTokenModel>> Login(LoginCustomer customer);
     Task<Result<bool>> Register(RegisterCustomer customer);
     Task<Result<bool>> Delete(Guid guid);
-    Task<Result<bool>> Waste(double sum);
+    Task<Result<bool>> Waste(IEnumerable<Guid> productIds, double sum);
     Task<Result<bool>> Earn(double sum);
 }

@@ -17,4 +17,7 @@ public static class CacheKeys
     public static string ServiceTokenByToken(string token) => $"[service_token_by_token]|{token}";
 
     public static string Product(Guid id) => $"[product]{id}";
+
+
+    public static string Rollback(Guid id) => $"[rollback]{id}";
 }
